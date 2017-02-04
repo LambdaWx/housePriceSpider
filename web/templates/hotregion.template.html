@@ -1,0 +1,128 @@
+<html>
+{% autoescape None %}
+<head>
+	<title>房价热力图</title>
+	<meta charset="utf-8">
+	<script type="text/javascript" src="http://cdn.hcharts.cn/jquery/jquery-1.8.3.min.js"></script>
+	<script type="text/javascript" src="http://cdn.hcharts.cn/jquery/jquery-1.8.3.min.js"></script>
+	<script type="text/javascript" src="http://cdn.hcharts.cn/highcharts/highcharts.js"></script>
+	<script type="text/javascript" src="http://cdn.hcharts.cn/highcharts/exporting.js"></script>
+
+	<style type="text/css">
+	div#header {background-color:#99bbbb; height:35px; margin-left: float; margin-right:float; text-align:right;line-height:35px;}
+	</style> 
+</head>
+<body>
+	</br>
+	<div id="main"></div>
+	<script src="/static/echarts-2.2.7/doc/example/www/js/echarts.js"></script>
+	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=Weefu0Q7Lj6BTdVLkHYEonQo"></script>
+	<script type="text/javascript" src="http://api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"></script>
+	<script src="/static/echarts-2.2.7/doc/asset/js/jquery.min.js"></script>
+	<script>
+		(function () {
+		//
+		//初始化地图 及echart插件
+		require.config({
+		paths: {
+			echarts: '/static/echarts-2.2.7/doc/example/www/js'
+		},
+		packages: [
+			{
+				name: 'BMap',
+				location: '/static/echarts-2.2.7/extension/BMap/src',
+				main: 'main'
+			}
+		]
+		});
+		require(
+			[
+				'echarts',
+				'BMap',
+				'echarts/chart/map'
+			],
+			function (echarts, BMapExtension) {
+			$('#main').css({
+				height:$('body').height(),
+				width: $('body').width()
+			});
+			// 初始化地图
+			var BMapExt = new BMapExtension($('#main')[0], BMap, echarts,{
+				enableMapClick: false
+			});
+			var map = BMapExt.getMap();
+			var container = BMapExt.getEchartsContainer();
+			var startPoint = {
+					x: {{center_lon}},
+					y: {{center_lat}}
+			};
+			var point = new BMap.Point(startPoint.x, startPoint.y);
+			map.centerAndZoom(point, 13);
+			map.enableScrollWheelZoom(true);
+
+			//显示热力图
+			//var points = {{hotregin}} //[{"lng":104.124612,"lat":30.615288,"count":550},{"lng":104.089054,"lat":30.656320000000001,"count":80}];
+			var points = {{hotregin}} //[{"lng":104.124612,"lat":30.615288,"count":550},{"lng":104.089054,"lat":30.656320000000001,"count":80}];
+			if(!isSupportCanvas()){
+				alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+			}
+			heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":10});
+			map.addOverlay(heatmapOverlay);
+			heatmapOverlay.setDataSet({data:points,max:100});
+			//是否显示热力图
+			function openHeatmap(){
+				heatmapOverlay.show();
+			}
+			function closeHeatmap(){
+				heatmapOverlay.hide();
+			}
+			function setGradient(){
+				var gradient = {};
+				var colors = document.querySelectorAll("input[type='color']");
+				colors = [].slice.call(colors,0);
+				colors.forEach(function(ele){
+					gradient[ele.getAttribute("data-key")] = ele.value; 
+				});
+				heatmapOverlay.setOptions({"gradient":gradient});
+			}
+			function isSupportCanvas(){
+				var elem = document.createElement('canvas');
+				return !!(elem.getContext && elem.getContext('2d'));
+			}
+			//热力图加载结束
+			option = {
+				color: ['gold','aqua','lime'],
+				title : {
+					text: '房价数据地理聚类分析',
+					x:'center',
+					textStyle : {
+						color: '#0000FF'
+					}
+				},
+				tooltip : {
+					trigger: 'item',
+					formatter: function (v) {
+						return v[1].replace(':', ' > ');
+					}
+				},
+				
+				toolbox: {
+					show : true,
+					//orient : 'vertical',
+					//x: 'right',
+					//y: 'center',
+					feature : {
+						mark : {show: true},
+						//dataView : {show: true, readOnly: false},
+						restore : {},
+						saveAsImage : {show:true, type:"png", pixelRatio:2}
+					}
+				},
+			};
+			BMapExt.setOption(option);
+			}
+		);
+		})();
+	</script>
+</body>
+</html>
